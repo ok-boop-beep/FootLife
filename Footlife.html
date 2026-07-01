@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)http://127.0.0.1:5500/kickoff-board%20(5).html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Footlife</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link href="./Footlife_files/css2" rel="stylesheet">
+<style>
+  :root{
+    --board-bg:#0e141b;
+    --board-bg-alt:#141c25;
+    --row-bg:#101720;
+    --flap-amber:#f5a623;
+    --flap-amber-dim:#9c6e1f;
+    --pitch-green:#3f8f5c;
+    --pitch-green-dim:#2a5e3e;
+    --text-light:#eae7df;
+    --text-dim:#7c8794;
+    --divider:#232c36;
+    --error-red:#e2574c;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--board-bg);
+    color:var(--text-light);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:32px 16px 64px;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+  }
+
+  /* ---- Header ---- */
+  .board-frame{
+    border:1px solid var(--divider);
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--board-bg-alt);
+    box-shadow:0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .header{
+    padding:22px 24px 16px;
+    border-bottom:1px solid var(--divider);
+    background: linear-gradient(180deg, rgba(245,166,35,0.05), transparent 60%);
+  }
+  .brand-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    letter-spacing:0.08em;
+    font-size:26px;
+    text-transform:uppercase;
+    color:var(--text-light);
+  }
+  .brand span{ color:var(--flap-amber); }
+  .clock{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    letter-spacing:0.05em;
+  }
+  .marquee{
+    margin-top:10px;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    color:var(--pitch-green);
+    text-transform:uppercase;
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;
+    height:16px;
+  }
+  .marquee-track{
+    display:inline-block;
+    padding-left:100%;
+    animation:scroll-left 18s linear infinite;
+  }
+  @keyframes scroll-left{
+    0%{ transform:translateX(0); }
+    100%{ transform:translateX(-100%); }
+  }
+
+  /* ---- League tabs ---- */
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:14px 24px;
+    border-bottom:1px solid var(--divider);
+    background:var(--board-bg);
+  }
+  .tab{
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid var(--divider);
+    border-radius:3px;
+    padding:7px 12px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .tab:hover{
+    border-color:var(--flap-amber-dim);
+    color:var(--text-light);
+  }
+  .tab.active{
+    background:var(--flap-amber);
+    border-color:var(--flap-amber);
+    color:#1a1306;
+    font-weight:600;
+  }
+  .legend{
+    padding:0 24px 12px;
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.02em;
+    color:var(--text-dim);
+    background:var(--board-bg);
+  }
+
+  /* ---- Body / states ---- */
+  .board-body{ padding:8px 0 18px; min-height:200px; }
+
+  .state{
+    padding:48px 24px;
+    text-align:center;
+    color:var(--text-dim);
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    letter-spacing:0.04em;
+  }
+  .state.err{ color:var(--error-red); }
+  .state .big{
+    font-family:'Oswald',sans-serif;
+    font-size:14px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-light);
+    margin-bottom:8px;
+  }
+  .dot-flicker::after{
+    content:'...';
+    animation:flicker 1.2s steps(4,end) infinite;
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:0.2; }
+    50%{ opacity:1; }
+  }
+
+  .retry-btn{
+    margin-top:14px;
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--error-red);
+    color:var(--error-red);
+    padding:8px 16px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .retry-btn:hover{ background:rgba(226,87,76,0.1); }
+
+  /* ---- Date groups ---- */
+  .date-group{ margin-top:10px; }
+  .date-label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 24px;
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .date-label .bar{
+    width:3px;
+    height:14px;
+    background:var(--pitch-green);
+    border-radius:1px;
+  }
+
+  /* ---- Match rows ---- */
+  .row{
+    padding:11px 24px;
+    border-top:1px solid var(--divider);
+    background:var(--row-bg);
+    opacity:0;
+    transform:rotateX(-90deg);
+    transform-origin:top;
+    animation:flap-in 0.4s ease forwards;
+    cursor:pointer;
+  }
+  .row.stale{ opacity:0.5; cursor:default; }
+  @keyframes flap-in{
+    to{ opacity:1; transform:rotateX(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .row{ animation:none; opacity:1; transform:none; }
+  }
+
+  .row-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .time{
+    flex:0 0 auto;
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+    color:var(--flap-amber);
+    background:#000;
+    border-radius:2px;
+    padding:4px 6px;
+    text-align:center;
+    letter-spacing:0.02em;
+  }
+  .match-info{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-width:0;
+  }
+  .team{
+    font-family:'Oswald',sans-serif;
+    font-size:14px;
+    letter-spacing:0.02em;
+    color:var(--text-light);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .team.away{ flex-direction:row-reverse; }
+  .flag{ flex:0 0 auto; }
+  .flag-img{
+    width:20px;
+    height:20px;
+    object-fit:contain;
+    border-radius:2px;
+    vertical-align:middle;
+  }
+  .vs{
+    flex:0 0 auto;
+    color:var(--text-dim);
+    font-family:'Space Mono',monospace;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing: 1px;
+    background:#000;
+    padding:2px 8px;
+    border-radius: 4px;
+  }
+
+  .status{
+    flex:0 0 auto;
+    font-family:'Oswald',sans-serif;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    white-space:nowrap;
+    padding:3px 8px;
+    border-radius:10px;
+    border:1px solid var(--divider);
+  }
+  .status.live{
+    color:#ffe8df;
+    background:var(--error-red);
+    border-color:var(--error-red);
+    animation:pulse-live 1.4s ease-in-out infinite;
+  }
+  .status.done{
+    color:var(--text-dim);
+    opacity:0.7;
+  }
+  @keyframes pulse-live{
+    0%,100%{ box-shadow:0 0 0 0 rgba(226,87,76,0.5); }
+    50%{ box-shadow:0 0 0 5px rgba(226,87,76,0); }
+  }
+
+  .row:not(.stale):hover{ background:rgba(245,166,35,0.06); }
+  .row.live{ background:linear-gradient(90deg, rgba(226,87,76,0.08), transparent 40%); }
+  .row.live:hover{ background:rgba(226,87,76,0.14); }
+  .row.live .row-top::after{
+    content:'▶ tap to open viewer';
+    flex-basis:100%;
+    text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:9px;
+    letter-spacing:0.08em;
+    color:var(--error-red);
+    text-transform:uppercase;
+    opacity:0.85;
+  }
+
+  /* ---- Blank player stage ---- */
+  .player-stage{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#000;
+    z-index:50;
+    flex-direction:column;
+  }
+  .player-stage.open{ display:flex; }
+  .player-bar{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--divider);
+    background:var(--board-bg-alt);
+  }
+  .back-btn{
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--divider);
+    color:var(--text-light);
+    padding:7px 12px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .back-btn:hover{ border-color:var(--flap-amber-dim); }
+  .player-title{
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .player-title strong{ color:var(--text-light); }
+  #playerContent{ flex:1 1 auto; }
+
+  footer{ text-align:center; color:var(--text-dim); font-size:11px; margin-top:14px; font-family:'Inter',sans-serif; }
+  footer a{ color:var(--text-dim); }
+
+  /* ---- News section ---- */
+  .news-frame{ margin-top:20px; border:1px solid var(--divider); border-radius:6px; overflow:hidden; background:var(--board-bg-alt); }
+  .news-header{ padding:16px 24px; border-bottom:1px solid var(--divider); font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:0.06em; font-size:14px; text-transform:uppercase; color:var(--text-light); display:flex; align-items:center; justify-content:space-between; }
+  .news-header .src{ font-family:'Space Mono',monospace; font-size:10px; letter-spacing:0.04em; color:var(--text-dim); text-transform:none; }
+  .news-list{ padding:4px 0 8px; }
+  .news-item{ display:block; padding:11px 24px; border-top:1px solid var(--divider); text-decoration:none; color:var(--text-light); font-family:'Inter',sans-serif; font-size:13px; line-height:1.4; transition:background 0.15s ease; }
+  .news-item:hover{ background:rgba(245,166,35,0.06); }
+  .news-item .news-time{ display:block; margin-top:3px; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:0.04em; color:var(--text-dim); text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="board-frame">
+    <div class="header">
+      <div class="brand-row">
+        <div class="brand">Foot<span>Life</span> BOARD</div>
+        <div class="clock" id="clock">13:23:17</div>
+      </div>
+      <div class="marquee">
+        <span class="marquee-track" id="marqueeText">WORLD CUP — 3 FIXTURES ON THE BOARD — </span>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"><button class="tab active">World Cup</button><button class="tab">Premier League</button><button class="tab">La Liga</button><button class="tab">Champions League</button><button class="tab">Serie A</button><button class="tab">Bundesliga</button><button class="tab">Ligue 1</button></div>
+    <div class="legend">📡 Connected to open ESPN Developer Node. Times shown in your local timezone (<span id="tzLabel">GMT+1</span>). Click any match (within last 3 days) to view.</div>
+
+    <div class="board-body" id="boardBody"><div class="date-group"><div class="date-label"><span class="bar"></span>TODAY</div>
+            <div class="row  " style="animation-delay:0s" data-home="England" data-away="Congo DR">
+              <div class="row-top">
+                <div class="time">5:00 PM</div>
+                <div class="match-info">
+                  <div class="team home">
+                    <img class="flag flag-img" src="./Footlife_files/eng.png" onerror="this.style.display=&#39;none&#39;">
+                    England
+                  </div>
+                  <div class="vs">VS</div>
+                  <div class="team away">
+                    <img class="flag flag-img" src="./Footlife_files/rdc.png" onerror="this.style.display=&#39;none&#39;">
+                    Congo DR
+                  </div>
+                </div>
+                <div class="status ">
+                  Kickoff 5:00 PM
+                </div>
+              </div>
+            </div>
+            <div class="row  " style="animation-delay:0.05s" data-home="Belgium" data-away="Senegal">
+              <div class="row-top">
+                <div class="time">9:00 PM</div>
+                <div class="match-info">
+                  <div class="team home">
+                    <img class="flag flag-img" src="./Footlife_files/bel.png" onerror="this.style.display=&#39;none&#39;">
+                    Belgium
+                  </div>
+                  <div class="vs">VS</div>
+                  <div class="team away">
+                    <img class="flag flag-img" src="./Footlife_files/sen.png" onerror="this.style.display=&#39;none&#39;">
+                    Senegal
+                  </div>
+                </div>
+                <div class="status ">
+                  Kickoff 9:00 PM
+                </div>
+              </div>
+            </div></div><div class="date-group"><div class="date-label"><span class="bar"></span>TOMORROW</div>
+            <div class="row  " style="animation-delay:0.1s" data-home="USA" data-away="Bosnia-Herz">
+              <div class="row-top">
+                <div class="time">1:00 AM</div>
+                <div class="match-info">
+                  <div class="team home">
+                    <img class="flag flag-img" src="./Footlife_files/usa.png" onerror="this.style.display=&#39;none&#39;">
+                    USA
+                  </div>
+                  <div class="vs">VS</div>
+                  <div class="team away">
+                    <img class="flag flag-img" src="./Footlife_files/bih.png" onerror="this.style.display=&#39;none&#39;">
+                    Bosnia-Herz
+                  </div>
+                </div>
+                <div class="status ">
+                  Kickoff 1:00 AM
+                </div>
+              </div>
+            </div></div></div>
+  </div>
+
+  <footer>Live fixture data powered natively via <a href="https://www.espn.com/" target="_blank" rel="noopener">ESPN</a> public API endpoints.</footer>
+
+  <div class="news-frame">
+    <div class="news-header">📰 Latest Football News <span class="src">via BBC Sport</span></div>
+    <div class="news-list" id="newsList">
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/articles/c17y8r90082o?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Time for Tuchel to show hand as England enter World Cup danger zone
+          <span class="news-time">4h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/news/articles/cx2xjwj8p39o?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Three die in Mexico City World Cup celebrations
+          <span class="news-time">2h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/articles/cp8r1zdj9k5o?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          United, free and brilliant - can anyone stop France masterclass?
+          <span class="news-time">12h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/articles/cn4dgz454dgo?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Scouting DR Congo - where England can win the game
+          <span class="news-time">3h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/videos/c2ky840z4wqo?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Mexico set up potential England tie with win over 10-man Ecuador
+          <span class="news-time">9h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/videos/c6216q7d62ro?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Mbappe scores twice as France dominate Sweden
+          <span class="news-time">14h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/articles/cy9rg5n3380o?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Mexico rampant at fortress Azteca - and England could be next
+          <span class="news-time">8h ago</span>
+        </a>
+        <a class="news-item" href="https://www.bbc.co.uk/sport/football/articles/c2lyrw20n80o?at_medium=RSS&amp;at_campaign=rss" target="_blank" rel="noopener">
+          Midfielder Neil joins Rangers from Sunderland
+          <span class="news-time">4h ago</span>
+        </a></div>
+  </div>
+</div>
+
+<div class="player-stage" id="playerStage">
+  <div class="player-bar">
+    <button class="back-btn" id="closePlayerBtn">← Back to board</button>
+    <div class="player-title" id="playerTitle"></div>
+  </div>
+  <div id="playerContent">
+    <iframe allowfullscreen="true" frameborder="0" height="500px" scrolling="1" src="./Footlife_files/saved_resource.html" width="100%"></iframe>
+  </div>
+</div>
+
+<script>
+  const LEAGUES = [
+    { id: 'fifa.world', name: 'World Cup' },
+    { id: 'eng.1', name: 'Premier League' },
+    { id: 'esp.1', name: 'La Liga' },
+    { id: 'uefa.champions', name: 'Champions League' },
+    { id: 'ita.1', name: 'Serie A' },
+    { id: 'ger.1', name: 'Bundesliga' },
+    { id: 'fra.1', name: 'Ligue 1' }
+  ];
+
+  let activeLeague = LEAGUES[0];
+
+  const tabsEl = document.getElementById('tabs'), bodyEl = document.getElementById('boardBody'), 
+        marqueeEl = document.getElementById('marqueeText'), clockEl = document.getElementById('clock'), 
+        playerStageEl = document.getElementById('playerStage'), playerTitleEl = document.getElementById('playerTitle');
+
+  function openPlayer(home, away){
+    playerTitleEl.innerHTML = `LIVE · <strong>${home} vs ${away}</strong>`;
+    playerStageEl.classList.add('open');
+  }
+  document.getElementById('closePlayerBtn').onclick = () => playerStageEl.classList.remove('open');
+
+  function renderTabs(){
+    tabsEl.innerHTML = '';
+    LEAGUES.forEach(lg => {
+      const btn = document.createElement('button');
+      btn.className = 'tab' + (lg.id === activeLeague.id ? ' active' : '');
+      btn.textContent = lg.name;
+      btn.onclick = () => { activeLeague = lg; renderTabs(); loadFixtures(); };
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function tickClock(){ clockEl.textContent = new Date().toLocaleTimeString([], { hour12:false }); }
+  setInterval(tickClock, 1000); tickClock();
+
+  // Show the viewer's actual timezone (e.g. "GMT+1") so the times on the board are unambiguous
+  document.getElementById('tzLabel').textContent =
+    Intl.DateTimeFormat([], { timeZoneName:'short' }).formatToParts(new Date())
+      .find(p => p.type === 'timeZoneName')?.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Consistent, unambiguous local-time formatter — used everywhere a kickoff time is shown
+  function formatTime(d){
+    return d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit', hour12:true });
+  }
+
+  function dayLabel(d){
+    const now = new Date();
+    const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const diffDays = Math.round((startOfDay(d) - startOfDay(now)) / 86400000);
+    if(diffDays === 0) return 'TODAY';
+    if(diffDays === 1) return 'TOMORROW';
+    if(diffDays === -1) return 'YESTERDAY';
+    return d.toLocaleDateString([], {weekday:'short', day:'2-digit', month:'short'}).toUpperCase();
+  }
+
+  function showLoading(){
+    bodyEl.innerHTML = `
+      <div class="state">
+        <div class="big">Fetching schedule<span class="dot-flicker"></span></div>
+        Pulling ${activeLeague.name} fixtures from the ESPN wire
+      </div>`;
+  }
+
+  function showError(){
+    bodyEl.innerHTML = `
+      <div class="state err">
+        <div class="big">Feed unavailable</div>
+        The fixture feed didn't respond. Check your connection and try again.
+        <div><button class="retry-btn" id="retryBtn">Retry</button></div>
+      </div>`;
+    document.getElementById('retryBtn').onclick = loadFixtures;
+  }
+
+  function showEmpty(){
+    bodyEl.innerHTML = `
+      <div class="state">
+        <div class="big">No fixtures scheduled</div>
+        ${activeLeague.name} has no matches posted in the current ESPN 7-day radar. Check back closer to matchday.
+      </div>`;
+  }
+
+  async function loadFixtures(){
+    showLoading();
+    const requestedLeague = activeLeague;
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${requestedLeague.id}/scoreboard`;
+    
+    try{
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('Bad response status');
+      const data = await res.json();
+      if(activeLeague.id !== requestedLeague.id) return;
+
+      const events = data.events || [];
+      if(events.length === 0){
+        showEmpty();
+        marqueeEl.textContent = `${requestedLeague.name.toUpperCase()} — NO FIXTURES POSTED YET — `;
+        return;
+      }
+
+      const now = new Date();
+      const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+      const groups = {};
+      
+      events.forEach(event => {
+        const d = new Date(event.date);
+        const key = d.toDateString();
+        if(!groups[key]) groups[key] = { date: d, items: [] };
+        groups[key].items.push({ event, d });
+      });
+
+      let html = '';
+      let rowIndex = 0;
+      
+      Object.keys(groups).sort((a,b) => groups[a].date - groups[b].date).forEach(key => {
+        const group = groups[key];
+        html += `<div class="date-group"><div class="date-label"><span class="bar"></span>${dayLabel(group.date)}</div>`;
+        
+        group.items.sort((a,b) => {
+          const aLive = a.event.status.type.state === 'in', bLive = b.event.status.type.state === 'in';
+          if(aLive !== bLive) return aLive ? -1 : 1; // live matches float to the top of their day
+          return a.d - b.d;
+        }).forEach(({event, d}) => {
+          const delay = (rowIndex % 8) * 0.05;
+          const match = event.competitions[0];
+          const homeTeam = match.competitors.find(c => c.homeAway === 'home');
+          const awayTeam = match.competitors.find(c => c.homeAway === 'away');
+          
+          const isLive = event.status.type.state === 'in';
+          const isFinished = event.status.type.state === 'post';
+          const isStale = d < threeDaysAgo;
+          
+          let scoreDisplay = 'VS';
+          if (isLive || isFinished) scoreDisplay = `${homeTeam.score}-${awayTeam.score}`;
+          if (isLive) scoreDisplay = `<span style="color:var(--flap-amber)">${scoreDisplay}</span>`;
+
+          const fallbackImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E";
+
+          // For matches that haven't kicked off, ESPN's shortDetail text is rendered in its own
+          // (often non-local) timezone, which used to fight with the local time badge above.
+          // Live/finished states only carry a clock/result (e.g. "45'", "FT"), so those are safe as-is.
+          const statusText = (isLive || isFinished) ? event.status.type.shortDetail : 'Kickoff ' + formatTime(d);
+
+          html += `
+            <div class="row ${isStale ? 'stale' : ''} ${isLive ? 'live' : ''}" style="animation-delay:${delay}s"
+                 data-home="${homeTeam.team.shortDisplayName}" data-away="${awayTeam.team.shortDisplayName}">
+              <div class="row-top">
+                <div class="time">${formatTime(d)}</div>
+                <div class="match-info">
+                  <div class="team home">
+                    <img class="flag flag-img" src="${homeTeam.team.logo || fallbackImg}" onerror="this.style.display='none'">
+                    ${homeTeam.team.shortDisplayName}
+                  </div>
+                  <div class="vs">${scoreDisplay}</div>
+                  <div class="team away">
+                    <img class="flag flag-img" src="${awayTeam.team.logo || fallbackImg}" onerror="this.style.display='none'">
+                    ${awayTeam.team.shortDisplayName}
+                  </div>
+                </div>
+                <div class="status ${isLive ? 'live' : (isFinished ? 'done' : '')}">
+                  ${statusText}
+                </div>
+              </div>
+            </div>`;
+          rowIndex++;
+        });
+        html += `</div>`;
+      });
+
+      bodyEl.innerHTML = html;
+      marqueeEl.textContent = `${activeLeague.name.toUpperCase()} — ${events.length} FIXTURES ON THE BOARD — `;
+    } catch(err){
+      if(activeLeague.id === requestedLeague.id) showError();
+    }
+  }
+
+  // Opens player dynamically via event delegation as long as row isn't stale
+  bodyEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.row');
+    if(!row || row.classList.contains('stale')) return;
+    openPlayer(row.dataset.home, row.dataset.away);
+  });
+
+  function timeAgo(dateStr){
+    const d = new Date(dateStr);
+    const diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+    if(diffMin < 60) return `${diffMin}m ago`;
+    const diffH = Math.round(diffMin / 60);
+    if(diffH < 24) return `${diffH}h ago`;
+    const diffD = Math.round(diffH / 24);
+    return `${diffD}d ago`;
+  }
+
+  async function loadNews(){
+    const newsListEl = document.getElementById('newsList');
+    try{
+      const feedUrl = encodeURIComponent('https://feeds.bbci.co.uk/sport/football/rss.xml');
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${feedUrl}`);
+      if(!res.ok) throw new Error('Bad response');
+      const data = await res.json();
+      const items = (data && data.items ? data.items : []).slice(0, 8);
+      
+      newsListEl.innerHTML = items.map(item => `
+        <a class="news-item" href="${item.link}" target="_blank" rel="noopener">
+          ${item.title}
+          <span class="news-time">${timeAgo(item.pubDate)}</span>
+        </a>`).join('');
+    } catch(err){
+      newsListEl.innerHTML = `
+        <div class="state" style="padding:24px;">
+          <div class="big">Headlines unavailable</div>
+          Couldn't reach the news feed right now.
+        </div>`;
+    }
+  }
+
+  renderTabs();
+  loadFixtures();
+  loadNews();
+  setInterval(loadFixtures, 30000);
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+</body></html>
